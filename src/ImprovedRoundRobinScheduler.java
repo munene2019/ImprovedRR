@@ -11,7 +11,8 @@ public class ImprovedRoundRobinScheduler {
         this.taskList = new ArrayList<>(tasks);
         this.modelUsed = modelUsed;
     }
-    DB db=new DB();
+    DB db = new DB();
+
     private int generateBatchId() {
         return (int) (System.currentTimeMillis() / 1000);  // Unix timestamp in seconds
     }
@@ -39,7 +40,7 @@ public class ImprovedRoundRobinScheduler {
             System.out.println("Assigning Task (Traditional RR) -> Worker: " + worker.getName() +
                     ", Task: " + task.getName());
 
-            saveAssignmentToDB(worker, task,generateBatchId());
+            saveAssignmentToDB(worker, task, generateBatchId());
             taskList.remove(taskIndex);  // Remove task after assignment
 
             workerQueue.offer(worker); // Put worker back in queue
@@ -51,6 +52,13 @@ public class ImprovedRoundRobinScheduler {
         while (!taskList.isEmpty()) {
             Worker worker = workerQueue.poll();
             if (worker == null) break;
+
+            // Skip worker if they have reached max load
+            if (!worker.canHandleMoreTasks()) {
+                System.out.println(worker.getName() + " has reached their load limit of " + worker.getMaxLoad() + ". Skipping assignment.");
+                workerQueue.offer(worker); // Put worker back in queue
+                continue;  // Skip this worker and move on to the next
+            }
 
             Task selectedTask = null;
             int maxPriority = Integer.MIN_VALUE;
@@ -78,10 +86,9 @@ public class ImprovedRoundRobinScheduler {
                 System.out.println("Assigning Task (Improved RR) -> Worker: " + worker.getName() +
                         ", Task: " + selectedTask.getName());
 
-
-
-                saveAssignmentToDB(worker, selectedTask,generateBatchId());
+                saveAssignmentToDB(worker, selectedTask, generateBatchId());
                 taskList.remove(selectedTask);
+                worker.increaseAssignedTasks();  // Increment assigned tasks after assignment
             } else {
                 System.out.println("No suitable task found for " + worker.getName());
             }
@@ -89,7 +96,6 @@ public class ImprovedRoundRobinScheduler {
             workerQueue.offer(worker);
         }
     }
-
 
     private void saveAssignmentToDB(Worker worker, Task task, int batchId) {
         System.out.println("Saving to DB -> Worker: " + worker.getId() +
@@ -111,7 +117,6 @@ public class ImprovedRoundRobinScheduler {
         }
     }
 
-
     // 🔹 Database Connection
     private static Connection getConnection() throws SQLException {
         String url = "jdbc:mariadb://localhost:3306/rr";
@@ -129,19 +134,22 @@ public class ImprovedRoundRobinScheduler {
             return;
         }
 
+//        System.out.println("\n=== Assigning Tasks Using Improved RR ===");
+//        ImprovedRoundRobinScheduler improvedRR = new ImprovedRoundRobinScheduler(workers, tasks, "Improved RR");
+//        improvedRR.assignTasks();
         System.out.println("\n=== Assigning Tasks Using Traditional RR ===");
         ImprovedRoundRobinScheduler traditionalRR = new ImprovedRoundRobinScheduler(workers, tasks, "Traditional RR");
         traditionalRR.assignTasks();
-
     }
 
     // 🔹 Fetch Workers from DB
     public static List<Worker> fetchWorkersFromDB() {
         List<Worker> workers = new ArrayList<>();
-        String sql = "SELECT worker_id, name, skill_level FROM workers";
+        String sql = "SELECT worker_id, name, skill_level, load_limit FROM workers";  // Assuming 'max_load' is added to the database
         try (Connection conn = getConnection(); PreparedStatement stmt = conn.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
             while (rs.next()) {
-                workers.add(new Worker(rs.getInt("worker_id"), rs.getString("name"), rs.getInt("skill_level")));
+                workers.add(new Worker(rs.getInt("worker_id"), rs.getString("name"),
+                        rs.getInt("skill_level"), rs.getInt("load_limit")));  // Fetch max_load from DB
             }
         } catch (SQLException e) {
             e.printStackTrace();
