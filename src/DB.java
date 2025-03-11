@@ -2,7 +2,7 @@ import java.io.*;
 import java.sql.*;
 import java.util.*;
 
-public class DB {
+public class  DB {
     private static final String DB_URL = "jdbc:mariadb://localhost:3306/rr";
     private static final String USER = "root";
     private static final String PASSWORD = "root";
@@ -11,8 +11,11 @@ public class DB {
     private static final String EMPLOYEES_CSV_FILE = "D:/Documents/Academics/KAGGLEDATA/tests.csv";
 
     public static void main(String[] args) {
-        insertTasks();
-        //insertWorkers();
+        //insertTasks();
+        insertWorkers();
+    }
+    public static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(DB_URL, USER, PASSWORD);
     }
     private static void insertTasks() {
         String insertQuery = "INSERT INTO tasks (priority, complexity, required_skill_level, name, category) VALUES (?, ?, ?, ?, ?)";
