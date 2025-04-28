@@ -130,11 +130,11 @@ public class RoundRobinScheduler {
         }
 
 //        System.out.println("\n=== Assigning Tasks Using Improved RR ===");
-//        ImprovedRoundRobinScheduler improvedRR = new ImprovedRoundRobinScheduler(workers, tasks, "Improved RR");
+//        RoundRobinScheduler improvedRR = new RoundRobinScheduler(workers, tasks, "Improved RR");
 //        improvedRR.assignTasks();
-        System.out.println("\n=== Assigning Tasks Using Traditional RR ===");
-        RoundRobinScheduler traditionalRR = new RoundRobinScheduler(workers, tasks, "Traditional RR");
-        traditionalRR.assignTasks();
+     System.out.println("\n=== Assigning Tasks Using Traditional RR ===");
+       RoundRobinScheduler traditionalRR = new RoundRobinScheduler(workers, tasks, "Traditional RR");
+       traditionalRR.assignTasks();
     }
 
     // 🔹 Fetch Workers from DB
